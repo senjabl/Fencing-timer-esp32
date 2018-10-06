@@ -10,11 +10,18 @@
 
  This example code is in the public domain.
  */
+//Initialization data for timer
+int Minutes = 3;
+int Seconds = 0;
+int centSeconds =0;
+int Periods = 1;
+int pointsLeft = 0;
+int pointsRight = 0;
 
-// Stop button is attached to PIN 0 (IO0)
-#define BTN_STOP_ALARM    0
 int vrijeme=0;
+
 hw_timer_t * timer = NULL;
+
 volatile SemaphoreHandle_t timerSemaphore;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -24,8 +31,32 @@ volatile uint32_t lastIsrAt = 0;
 void IRAM_ATTR onTimer(){
   // Increment the counter and set the time of ISR
   portENTER_CRITICAL_ISR(&timerMux);
-  isrCounter++;
-  lastIsrAt = millis();
+if (centSeconds != 0)
+{
+  centSeconds--;
+}
+else {
+  centSeconds = 99;
+  if (Seconds != 0)
+  {
+    Seconds--;
+  }
+  else
+  {
+    Seconds=59;
+    if (Minutes != 0)
+    {
+      Minutes--;
+    }
+
+  }
+}
+if (Minutes==0 && Seconds==0 && centSeconds==0)
+{
+  timerStop(timer);
+}
+  //isrCounter++;
+  //lastIsrAt = millis();
   portEXIT_CRITICAL_ISR(&timerMux);
   // Give a semaphore that we can check in the loop
   xSemaphoreGiveFromISR(timerSemaphore, NULL);
@@ -36,7 +67,7 @@ void setup() {
   Serial.begin(115200);
 
   // Set BTN_STOP_ALARM to input mode
-  pinMode(BTN_STOP_ALARM, INPUT);
+//  pinMode(BTN_STOP_ALARM, INPUT);
 
   // Create semaphore to inform us when the timer has fired
   timerSemaphore = xSemaphoreCreateBinary();
@@ -49,50 +80,35 @@ void setup() {
   // Attach onTimer function to our timer.
   timerAttachInterrupt(timer, &onTimer, true);
 
-  // Set alarm to call onTimer function every second (value in microseconds).
+  // Set alarm to call onTimer function 100 times per second (value in microseconds).
   // Repeat the alarm (third parameter)
   timerAlarmWrite(timer, 10000, true);
 
   // Start an alarm
+  delay(10000);
   timerAlarmEnable(timer);
 }
 
 void loop() {
   // If Timer has fired
   if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE){
-    /*uint32_t isrCount = 0, isrTime = 0;
-    // Read the interrupt count and time
-    portENTER_CRITICAL(&timerMux);
-    isrCount = isrCounter;
-    isrTime = lastIsrAt;
-    portEXIT_CRITICAL(&timerMux);
-    // Print it
-    Serial.print("onTimer no. ");
-    Serial.print(isrCount);
-    Serial.print(" at ");
-    Serial.print(isrTime);
-    Serial.println(" ms");*/
-    Serial.println(vrijeme);
-
-    vrijeme++;
-    if(vrijeme>3000)
-    {  timerStop(timer);
-
+      Serial.print(Minutes);
+      Serial.print(":");
+      Serial.print(Seconds);
+      Serial.print(":");
+      Serial.println(centSeconds);
+    //vrijeme++;
+    if (Minutes==0 && Seconds==0 && centSeconds==0)
+    {  delay(5000);
+      Minutes=3;
+      Seconds=0;
+      centSeconds=0;
         //timer = NULL;
-        vrijeme=0;
-        delay(3000);
+
         //timer = timerBegin(0, 80, true);
           timerStart(timer);
     }
   }
 
-  // If button is pressed
-  /*if (digitalRead(BTN_STOP_ALARM) == LOW) {
-    // If timer is still running
-    if (timer) {
-      // Stop and free timer
-      timerEnd(timer);
-      timer = NULL;
-    }
-  }*/
+
 }
