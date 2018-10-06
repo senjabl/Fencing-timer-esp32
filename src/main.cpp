@@ -17,6 +17,7 @@ int centSeconds =0;
 int Periods = 1;
 int pointsLeft = 0;
 int pointsRight = 0;
+char buf[10];
 
 int vrijeme=0;
 
@@ -92,11 +93,8 @@ void setup() {
 void loop() {
   // If Timer has fired
   if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE){
-      Serial.print(Minutes);
-      Serial.print(":");
-      Serial.print(Seconds);
-      Serial.print(":");
-      Serial.println(centSeconds);
+      sprintf(buf,"%02d:%02d:%02d", Minutes,Seconds,centSeconds);
+      Serial.println(buf);
     //vrijeme++;
     if (Minutes==0 && Seconds==0 && centSeconds==0)
     {  delay(5000);
